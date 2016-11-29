@@ -1,0 +1,4 @@
+numpy >= 1.11.1
+sugartensor >= 0.0.1.8 (Check [this repository](https://github.com/buriburisuri/sugartensor) for installing sugartensor)
+nltk >= 3.2.1 (You need to download `brown` corpus)
+gensim >= 0.13.1 (For creating word2vec models)
