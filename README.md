@@ -1,4 +1,4 @@
-# neural_tokenizer
+# Neural Tokenizer
 
 ## Requirements
   * numpy >= 1.11.1
@@ -19,14 +19,10 @@ Can we segment untokenized English sentences correctly using neural networks?
   * Neural networks, concretely RNN, can be an alternative to CRFs.
 
 ## Main Idea
-We use bidirectional GRU layers with layer normalization <br/> as
-tokenization of a certain time step is dependent on its future as well as its past. <br />
-Layer normalization is applied to boost the performance.
+We use bidirectional GRU layers with layer normalization as tokenization of a certain time step is dependent on its future as well as its past. Layer normalization is applied to boost the performance.
 
 ## Data
-We use the brown corpus which can be obtained from `nltk`. <br />
-It is not big enough, but publicly available.<br />
-And we don't have to clean it.
+We use the brown corpus which can be obtained from `nltk`. It is not big enough, but publicly available. Besides, we don't have to clean it.
 
 ## Results
 After having seen 11,537 samples for 5 epochs, we got .93 of the tokenization accuracy.<br/> 
@@ -38,8 +34,8 @@ Here are some snippets of the test results.
 ▌Expected: Adrien Deslonde hastened to Alexander's side .<br/>
 ▌Got: Adrien De slond ehas tened to Alexander 's side .<br/>
 
-▌Expected: `` Small violently jerked the weather-royal brace with full intention to carry away the mast .<br/>
-▌Got: `` Small violently jerked the weat her -roy albracewith full intentionto carry away the mast.<br/>
+▌Expected: Small violently jerked the weather-royal brace with full intention to carry away the mast .<br/>
+▌Got: Small violently jerked the weat her -roy albracewith full intentionto carry away the mast.<br/>
 
 ▌Expected: I saw him myself and it was done after consultation with Cromwell .<br/>
 ▌Got: I saw him my self and it was done after consultation with Cromwell .<br/>
