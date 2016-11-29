@@ -26,8 +26,8 @@ def main():
         with codecs.open('results.txt', 'w', 'utf-8') as fout:
             results = []
             for step in range(len(X) // Hyperparams.batch_size -1):
-                X_batch = X[step: step + Hyperparams.batch_size, :] 
-                Y_batch = Y[step: step + Hyperparams.batch_size, :]
+                X_batch = X[step*Hyperparams.batch_size: (step+1)*Hyperparams.batch_size] 
+                Y_batch = Y[step*Hyperparams.batch_size: (step+1)*Hyperparams.batch_size]
                 
                 # predict characters
                 logits = sess.run(graph.logits, {graph.X_batch: X_batch})
