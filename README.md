@@ -32,35 +32,35 @@ And we don't have to clean it.
 After having seen 11,537 samples for 5 epochs, we got .93 of the tokenization accuracy.<br/> 
 Here are some snippets of the test results.
 
-▌Expected: The aimless milling about of what had been a well-trained , well-organized crew struck Alexander with horror .
-▌Got: The aim less milling about of what had been awell-trained , well -or ganized crews truck Alex ander with horror .
+▌Expected: The aimless milling about of what had been a well-trained , well-organized crew struck Alexander with horror .<br />
+▌Got: The aim less milling about of what had been awell-trained , well -or ganized crews truck Alex ander with horror .<br />
 
-▌Expected: Adrien Deslonde hastened to Alexander's side .
-▌Got: Adrien De slond ehas tened to Alexander 's side .
+▌Expected: Adrien Deslonde hastened to Alexander's side .<br />
+▌Got: Adrien De slond ehas tened to Alexander 's side .<br />
 
-▌Expected: `` Small violently jerked the weather-royal brace with full intention to carry away the mast .
-▌Got: `` Small violently jerked the weat her -roy albracewith full intentionto carry away the mast.
+▌Expected: `` Small violently jerked the weather-royal brace with full intention to carry away the mast .<br />
+▌Got: `` Small violently jerked the weat her -roy albracewith full intentionto carry away the mast.<br />
 
-▌Expected: I saw him myself and it was done after consultation with Cromwell .
-▌Got: I saw him my self and it was done after consultation with Cromwell .
+▌Expected: I saw him myself and it was done after consultation with Cromwell .<br />
+▌Got: I saw him my self and it was done after consultation with Cromwell .<br />
 
-▌Expected: I swear it , sir '' .
-▌Got: I swearit, sir '' .
+▌Expected: I swear it , sir '' .<br />
+▌Got: I swearit, sir '' .<br />
 
-▌Expected: Then , with disappointment evident upon their faces , they moved to the work .
-▌Got: The n , with disappoin tment evidentupon the ir faces , they moved to the work .
+▌Expected: Then , with disappointment evident upon their faces , they moved to the work .<br />
+▌Got: The n , with disappoin tment evidentupon the ir faces , they moved to the work .<br />
 
-▌Expected: Wilson , shackled and snarling , was thrown with the other prisoners and was soon joined by Green , McKee and McKinley .
-▌Got: Wilson , shackled and snarling , was thrown with the otherprisoners and was soon joined by Green , McKeeand McKinley .
+▌Expected: Wilson , shackled and snarling , was thrown with the other prisoners and was soon joined by Green , McKee and McKinley .<br />
+▌Got: Wilson , shackled and snarling , was thrown with the otherprisoners and was soon joined by Green , McKeeand McKinley .<br />
 
-▌Expected: Not a man on the brig , loyal or villainous , could be unaffected by the sight of seven men involved in the crime of mutiny .
-▌Got: Nota man on the brig, loy alor villain ous , could be unaffected by the sight of seven meninvolved in the crimeof mutiny .
+▌Expected: Not a man on the brig , loyal or villainous , could be unaffected by the sight of seven men involved in the crime of mutiny .<br />
+▌Got: Nota man on the brig, loy alor villain ous , could be unaffected by the sight of seven meninvolved in the crimeof mutiny .<br />
 
-▌Expected: Adrien Deslonde hastened to Alexander's side .
-▌Got: Adrien De slond ehas tened to Alexander 's side .
+▌Expected: Adrien Deslonde hastened to Alexander's side .<br />
+▌Got: Adrien De slond ehas tened to Alexander 's side .<br />
 
-▌Expected: `` Small violently jerked the weather-royal brace with full intention to carry away the mast .
-▌Got: `` Small violently jerked the weat her -roy albracewith full intentionto carry away the mast.
+▌Expected: `` Small violently jerked the weather-royal brace with full intention to carry away the mast .<br />
+▌Got: `` Small violently jerked the weat her -roy albracewith full intentionto carry away the mast.<br />
 
 Final Accuracy = 164078/176689=0.93
 
