@@ -1,72 +1,105 @@
 # Neural Tokenizer
 
-## Requirements
-  * numpy >= 1.11.1
-  * sugartensor >= 0.0.1.8 (Check [this repository](https://github.com/buriburisuri/sugartensor) for installing sugartensor)
-  * nltk >= 3.2.1 (You need to download `brown` corpus)
-  * gensim >= 0.13.1 (For creating word2vec models)
+## Motivation
+Tokenization, or segmentation, is often the first step in text processing. It is not a trivial problem in such languages as Chinese, Japanese, or Vietnamese. For English, generally speaking, tokenization is not as important as those languages. However, it may not be so in the mobile environment as people often neglect it. Plus, in my opinion, English is a good testbed before we attack other challenging languages. Tradionally Conditional Random Fields have been successfully employed for tokenization, but neural networks can be an alternative. This is a simple, and/but fun task. Probably you can see the results in less than 10 minutes on a single GPU!
 
-## Research Topic
-Can we segment untokenized English sentences correctly using neural networks?
-
-## Background
-  * In many cases, tokenization is the first step in text processing.
-  * In some languages such as Chinese, Japanese, or Vietnamese, tokenization is non-trivial.
-  * For English, generally speaking, tokenization is not as important as those languages, but
-  * Tokenization can be needed in mobile environments as people often neglect it.
-  * And English is a good language to test before we attack other challenging languages.
-  * CRFs are known to be good at tokenization.
-  * Neural networks, concretely RNN, can be an alternative to CRFs.
-
-## Main Idea
-We use bidirectional GRU layers with layer normalization as tokenization of a certain time step is dependent on its future as well as its past. Layer normalization is applied to boost the performance.
+# Model Description
+Modified CBHG model, which was introduced in [Tacotron: Towards End-to-End Speech Synthesis](https://arxiv.org/abs/1703.10135), is employed. It is a very powerful architecture with a reasonable number of hyperparameters.
 
 ## Data
 We use the brown corpus which can be obtained from `nltk`. It is not big enough, but publicly available. Besides, we don't have to clean it.
 
+## Requirements
+ * NumPy >= 1.11.1
+ * TensorFlow = 1.2
+ * nltk >= 3.2.1 (You need to download `brown` corpus)
+ * tqdm >= 4.14.0
+
+## File description
+
+ * `hyperparams.py` includes all hyper parameters that are needed.
+ * `data_load.py` loads data and put them in queues.
+ * `modules.py` contains building blocks for the network.
+ * `train.py` is for training.
+ * `eval.py` is for evaluation.
+
+## Training
+  * STEP 0. Make sure you meet the requirements.
+  * STEP 1. Adjust hyper parameters in hyperparams.py if necessary.
+  * STEP 2. Run `train.py` or download my [pretrained files](https://u42868014.dl.dropboxusercontent.com/u/42868014/neural_tokenizer/logdir.zip).
+
+## Evaluation
+  * Run `eval.py`.
+
 ## Results
-After having seen 11,537 samples for 5 epochs, we got .93 of the tokenization accuracy.<br/> 
-Here are some snippets of the test results.
+I got an test accuracy of 0.9877 against the model of 15 epochs, or 4,914 global steps. The baseline result is acquired when we assume we didn't touch anything on the untokenized data. Some of the results are shown below. Details are available in the `results` folder.
 
-▌Expected: The aimless milling about of what had been a well-trained , well-organized crew struck Alexander with horror .<br/>
-▌Got: The aim less milling about of what had been awell-trained , well -or ganized crews truck Alex ander with horror .<br/>
+Final Accuracy = 209086/211699=0.9877
+Baseline Accuracy = 166107/211699=0.7846
 
-▌Expected: Adrien Deslonde hastened to Alexander's side .<br/>
-▌Got: Adrien De slond ehas tened to Alexander 's side .<br/>
+▌Expected: Likewise the ivory Chinese female figure known as a doctor lady '' provenance Honan<br>
+▌Got: Likewise theivory Chinese female figure known as a doctor lady '' provenance Honan<br>
 
-▌Expected: Small violently jerked the weather-royal brace with full intention to carry away the mast .<br/>
-▌Got: Small violently jerked the weat her -roy albracewith full intentionto carry away the mast.<br/>
+▌Expected: a friend of mine removing her from the curio cabinet for inspection was felled as if by a hammer but he had previously drunk a quantity of applejack
+▌Got: a friend of mine removing her from the curiocabinet for inspection was felled as if by a hammer but he had previously drunk a quantity of apple jack
 
-▌Expected: I saw him myself and it was done after consultation with Cromwell .<br/>
-▌Got: I saw him my self and it was done after consultation with Cromwell .<br/>
+▌Expected: The three Indian brass deities though Ganessa Siva and Krishna are an altogether different cup of tea
+▌Got: The three Indian brass deities though Ganess a Siva and Krishna are an altogether different cup of tea
 
-▌Expected: I swear it , sir '' .<br/>
-▌Got: I swearit, sir '' .<br/>
+▌Expected: They hail from Travancore a state in the subcontinent where Kali the goddess of death is worshiped
+▌Got: They hail from Travan core a state in the subcontinent where Kalit he goddess of deat his worshiped
 
-▌Expected: Then , with disappointment evident upon their faces , they moved to the work .<br/>
-▌Got: The n , with disappoin tment evidentupon the ir faces , they moved to the work .<br/>
+▌Expected: Have you ever heard of Thuggee
+▌Got: Have you ever heard of Thuggee
 
-▌Expected: Wilson , shackled and snarling , was thrown with the other prisoners and was soon joined by Green , McKee and McKinley .<br/>
-▌Got: Wilson , shackled and snarling , was thrown with the otherprisoners and was soon joined by Green , McKeeand McKinley .<br/>
+▌Expected: Oddly enough this is an amulet against housebreakers presented to the mem and me by a local rajah in
+▌Got: Oddly enough this is an a mulet against house breakers presented to the memand me by a local rajahin
 
-▌Expected: Not a man on the brig , loyal or villainous , could be unaffected by the sight of seven men involved in the crime of mutiny .<br/>
-▌Got: Nota man on the brig, loy alor villain ous , could be unaffected by the sight of seven meninvolved in the crimeof mutiny .<br/>
+▌Expected: Inscribed around its base is a charm in Balinese a dialect I take it you don't comprehend
+▌Got: Inscribed around its base is a charm in Baline seadialect I take it you don't comprehend
 
-▌Expected: In the tiny cabin , Alexander met with Gansevoort , Heiser and Wales to speak and to listen .<br/>
-▌Got: I n the tiny cabin, Alex andermetwith Gansev oor t, Heiser and Wales tospeak and to listen .<br/>
+▌Expected: Neither do I but the Tjokorda Agoeng was good enough to translate and I'll do as much for you
+▌Got: Neither do I but the Tjokord a Agoeng was good enough to translate and I'll do as much for you
 
-▌Expected: Three days had passed since Spencer's arrest and each day had brought new dangers , new fears .<br/>
-▌Got: Three day s had passed since Spence r 's arrest and each day had brought newdangers , newfears .<br/>
+▌Expected: Whosoever violates our rooftree the legend states can expect maximal sorrow
+▌Got: Who so ever violate sour roof treethe legend states can expect maximal s orrow
 
-Final Accuracy = 157670/170148=0.93
+▌Expected: The teeth will rain from his mouth like pebbles his wife will make him cocu with fishmongers and a trolley car will grow in his stomach
+▌Got: The teeth will rain from his mouth like pebbles his wife will make him cocu with fish mongers and a trolley car will grow in his stomach
 
-## Conclusion
-Bidirectional RNNs turns out to be effective in English tokenization.
+▌Expected: Furthermore and this to me strikes an especially warming note it shall avail the vandals naught to throw away or dispose of their loot
+▌Got: Furthermore and this tome strikes an especially warming note it shall avail the vand alsnaught to throw away or dispose of their loot
 
-## Further Study
-  * Of course, we need to compare these results with those of CRFs or others.<br/>
-  * And for better performance, we need more data.<br/>
-  * We can apply this idea to other languages such as Chinese, Japanese, Vietnamese, or Thai.
+▌Expected: The cycle of disaster starts the moment they touch any belonging of ours and dogs them unto the fortyfifth generation
+▌Got: The cycle of disaster starts the moment they touch any belonging of ours and dogs them un to the fortyfifth generation
+
+▌Expected: Sort of remorseless isn't it
+▌Got: Sort of remorseless isn't it
+
+▌Expected: Still there it is
+▌Got: Still there it is
+
+▌Expected: Now you no doubt regard the preceding as pap
+▌Got: Now you no doubt regard the preceding aspap
+
+▌Expected: In that case listen to what befell another wisenheimer who tangled with our joss
+▌Got: In that case listen to what be fell anotherwisen heimer who tangled with our joss
+
+▌Expected: A couple of years back I occupied a Village apartment whose outer staircase contained the type of niche called a coffin turn ''
+▌Got: A couple of yearsback I occupied a Village apartment whose outerstair case contained the type of niche called a coffinturn ''
+
+▌Expected: After a while we became aware that the money was disappearing as fast as we replenished it
+▌Got: After a while we became aware that the money was disappearing as fast as were plenished it
+
+▌Expected: The more I probed into this young man's activities and character the less savory I found him
+▌Got: The more I probed into this young man's activities and character the less savory I found him
+
+▌Expected: His energy was prodigious
+▌Got: His energy was prodigious
+
+▌Expected: In short and to borrow an arboreal phrase slash timber
+▌Got: In short and toborrow an arboreal phrases lash timber
+
 
 
 

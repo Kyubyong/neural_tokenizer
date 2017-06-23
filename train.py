@@ -1,92 +1,131 @@
 # -*- coding: utf-8 -*-
+# /usr/bin/python2
 '''
-Tokenizes English sentences using neural networks
-Nov., 2016. Kyubyong.
+June 2017 by kyubyong park.
+kbpark.linguist@gmail.com.
+https://www.github.com/kyubyong/neural_tokenizer
 '''
+from __future__ import print_function
+from hyperparams import Hyperparams as hp
+import tensorflow as tf
+from data_load import get_batch_data, load_vocab, load_data
+from modules import *
+from tqdm import tqdm
 
-from prepro import Hyperparams, load_data, load_embed_lookup_table
-import sugartensor as tf
+class Graph:
+    def __init__(self, is_training=True):
+        self.graph = tf.Graph()
+        with self.graph.as_default():
+            # Load data
+            self.x, self.y, self.num_batch = get_batch_data()  # (N, T)
 
-def get_batch_data(mode='train'):
-    '''Makes batch queues from the data.
-    
-    Args:
-      mode: A string. Either 'train', 'val', or 'test' 
-    Returns:
-      A Tuple of X_batch (Tensor), Y_batch (Tensor), and number of batches (int).
-      X_batch and Y_batch have of the shape [batch_size, maxlen].
-    '''
-    # Load data
-    X, Y = load_data(mode)
-    
-    # Create Queues
-    input_queues = tf.train.slice_input_producer([tf.convert_to_tensor(X, tf.int32), 
-                                                  tf.convert_to_tensor(Y, tf.int32)])
-    
-    # create batch queues
-    X_batch, Y_batch = tf.train.shuffle_batch( 
-                                      input_queues,
-                                      num_threads=8,
-                                      batch_size=Hyperparams.batch_size, 
-                                      capacity=Hyperparams.batch_size*64,
-                                      min_after_dequeue=Hyperparams.batch_size*32, 
-                                      allow_smaller_final_batch=False) 
-    # calc total batch count
-    num_batch = len(X) // Hyperparams.batch_size
-    
-    return X_batch, Y_batch, num_batch
+            # Load vocabulary
+            char2idx, idx2char = load_vocab()
 
-class ModelGraph():
-    '''Builds a model graph'''
-    def __init__(self, mode="train"):
-        '''
-        Args:
-          mode: A string. Either "train" , "val", or "test"
-        '''
-        if mode=='train':
-            self.X_batch, self.Y_batch, self.num_batch = get_batch_data('train')
-        else:
-            self.X_batch = tf.placeholder(tf.int32, [Hyperparams.batch_size, Hyperparams.maxlen])
-            self.Y_batch = tf.placeholder(tf.int32, [Hyperparams.batch_size, Hyperparams.maxlen])
-        self.X_batch_rev = self.X_batch.sg_reverse_seq() # (8, 100)
-          
-        # make embedding matrix for input characters
-        embed_mat = tf.convert_to_tensor(load_embed_lookup_table())
-          
-        # embed table lookup
-        X_batch_3d = self.X_batch.sg_lookup(emb=embed_mat).sg_float() # (8, 100, 200)
-        X_batch_rev_3d = self.X_batch_rev.sg_lookup(emb=embed_mat).sg_float() # (8, 100, 200)
-        
-        # 1st biGRU layer
-        gru_fw1 = X_batch_3d.sg_gru(dim=Hyperparams.hidden_dim, ln=True) # (8, 100, 200)
-        gru_bw1 = X_batch_rev_3d.sg_gru(dim=Hyperparams.hidden_dim, ln=True) # (8, 100, 200)
-        gru1 = gru_fw1.sg_concat(target=gru_bw1) # (8, 100, 400)
-        
-        # 2nd biGRU layer
-        gru_fw2 = gru1.sg_gru(dim=Hyperparams.hidden_dim*2, ln=True) # (8, 100, 400)
-        gru_bw2 = gru1.sg_gru(dim=Hyperparams.hidden_dim*2, ln=True) # (8, 100, 400)
-        gru2 = gru_fw2.sg_concat(target=gru_bw2) # (16, 100, 800)
-        
-        # fc dense layer
-        reshaped = gru2.sg_reshape(shape=[-1, gru2.get_shape().as_list()[-1]])
-        logits = reshaped.sg_dense(dim=3) # 1 for space 2 for non-space
-        self.logits = logits.sg_reshape(shape=gru2.get_shape().as_list()[:-1] + [-1])
-        
-        if mode=='train':
-            # cross entropy loss with logits ( for training set )
-            self.loss = self.logits.sg_ce(target=self.Y_batch, mask=True)
+            # Encoder
+            ## Embedding
+            enc = embedding(self.x,
+                             vocab_size=len(char2idx),
+                             num_units=hp.hidden_units,
+                             scale=False,
+                             scope="enc_embed")
 
-            # accuracy evaluation ( for validation set )
-            self.X_val_batch, self.Y_val_batch, self.num_batch = get_batch_data('val')
-            
-            self.acc = (self.logits.sg_reuse(input=self.X_val_batch)
-                   .sg_accuracy(target=self.Y_val_batch, name='val'))
-         
-def train():
-    g = ModelGraph()
-    print "Graph loaded!"
-    tf.sg_train(log_interval=10, loss=g.loss, eval_metric=[g.acc], max_ep=5, 
-                save_dir='asset/train', early_stop=False, max_keep=10)
-     
+            # Encoder pre-net
+            prenet_out = prenet(enc,
+                                num_units=[hp.hidden_units, hp.hidden_units//2],
+                                dropout_rate=hp.dropout_rate,
+                                is_training=is_training)  # (N, T, E/2)
+
+            # Encoder CBHG
+            ## Conv1D bank
+            enc = conv1d_banks(prenet_out,
+                               K=hp.encoder_num_banks,
+                               num_units=hp.hidden_units//2,
+                               norm_type="ins",
+                               is_training=is_training)  # (N, T, K * E / 2)
+
+            ### Max pooling
+            enc = tf.layers.max_pooling1d(enc, 2, 1, padding="same")  # (N, T, K * E / 2)
+
+            ### Conv1D projections
+            enc = conv1d(enc, hp.hidden_units//2, 3, scope="conv1d_1")  # (N, T, E/2)
+            enc = normalize(enc, type="ins", is_training=is_training, activation_fn=tf.nn.relu)
+            enc = conv1d(enc, hp.hidden_units//2, 3, scope="conv1d_2")  # (N, T, E/2)
+            enc += prenet_out  # (N, T, E/2) # residual connections
+
+            ### Highway Nets
+            for i in range(hp.num_highwaynet_blocks):
+                enc = highwaynet(enc, num_units=hp.hidden_units//2,
+                                 scope='highwaynet_{}'.format(i))  # (N, T, E/2)
+
+            ### Bidirectional GRU
+            enc = gru(enc, hp.hidden_units//2, True)  # (N, T, E)
+
+            # Final linear projection
+            self.logits = tf.layers.dense(enc, 2) # 0 for non-space, 1 for space
+
+            self.preds = tf.to_int32(tf.arg_max(self.logits, dimension=-1))
+            self.istarget = tf.to_float(tf.not_equal(self.x, 0)) # masking
+            self.num_hits = tf.reduce_sum(tf.to_float(tf.equal(self.preds, self.y)) * self.istarget)
+            self.num_targets = tf.reduce_sum(self.istarget)
+            self.acc = self.num_hits / self.num_targets
+
+            if is_training:
+                # Loss
+                self.loss = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=self.logits, labels=self.y)
+                self.mean_loss = tf.reduce_sum(self.loss * self.istarget) / (tf.reduce_sum(self.istarget))
+
+                # Training Scheme
+                self.global_step = tf.Variable(0, name='global_step', trainable=False)
+                self.optimizer = tf.train.AdamOptimizer(learning_rate=hp.lr, beta1=0.9, beta2=0.98, epsilon=1e-8)
+                self.train_op = self.optimizer.minimize(self.mean_loss, global_step=self.global_step)
+
+                # # Summary
+                # tf.summary.scalar('mean_loss', self.mean_loss)
+                # tf.summary.merge_all()
+
+
+
 if __name__ == '__main__':
-    train(); print "Done"
+    # Construct graph
+    g = Graph()
+    print("Graph loaded")
+
+    char2idx, idx2char = load_vocab()
+    with g.graph.as_default():
+        # For validation
+        X_val, Y_val = load_data(mode="val")
+        num_batch = len(X_val) // hp.batch_size
+
+        # Start session
+        sv = tf.train.Supervisor(graph=g.graph,
+                                 logdir=hp.logdir,
+                                 save_model_secs=0)
+        with sv.managed_session() as sess:
+            for epoch in range(1, hp.num_epochs + 1):
+                if sv.should_stop(): break
+                for step in tqdm(range(g.num_batch), total=g.num_batch, ncols=70, leave=False, unit='b'):
+                    sess.run(g.train_op)
+
+                    # logging
+                    if step % 100 == 0:
+                        gs, mean_loss = sess.run([g.global_step, g.mean_loss])
+                        print("\nAfter global steps %d, the training loss is %.2f" % (gs, mean_loss))
+
+                # Save
+                gs = sess.run(g.global_step)
+                sv.saver.save(sess, hp.logdir + '/model_epoch_%02d_gs_%d' % (epoch, gs))
+
+                # Validation check
+                total_hits, total_targets = 0, 0
+                for step in tqdm(range(num_batch), total=num_batch, ncols=70, leave=False, unit='b'):
+                    x = X_val[step*hp.batch_size:(step+1)*hp.batch_size]
+                    y = Y_val[step*hp.batch_size:(step+1)*hp.batch_size]
+                    num_hits, num_targets = sess.run([g.num_hits, g.num_targets], {g.x: x, g.y: y})
+                    total_hits += num_hits
+                    total_targets += num_targets
+                print("\nAfter epoch %d, the validation accuracy is %d/%d=%.2f" % (epoch, total_hits, total_targets, total_hits/total_targets))
+
+    print("Done")
+
+
