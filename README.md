@@ -26,7 +26,7 @@ We use the brown corpus which can be obtained from `nltk`. It is not big enough,
 ## Training
   * STEP 0. Make sure you meet the requirements.
   * STEP 1. Adjust hyper parameters in hyperparams.py if necessary.
-  * STEP 2. Run `train.py` or download my [pretrained files](https://u42868014.dl.dropboxusercontent.com/u/42868014/neural_tokenizer/logdir.zip).
+  * STEP 2. Run `train.py` or download my [pretrained files](https://www.dropbox.com/s/fxl3ixo5jwl7ihv/logdir.zip?dl=0).
 
 ## Evaluation
   * Run `eval.py`.
